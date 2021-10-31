@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import face_recognition
 import os
+from datetime import datetime
 
 path = 'ImagesAttendance'
 images = []
@@ -21,6 +22,21 @@ def findencoding(images):
         encodelist.append(encode)
     return encodelist
 
+def markattendance(name):
+    with open('Attendance.csv','r+') as f:
+        mydatalist = f.readline()
+        namelist = []
+        # print(mydatalist)
+        for line in mydatalist:
+            entry = line.split(',')
+            namelist.append(entry[0])
+        if name not in namelist:
+            now = datetime.now()
+            dtstring = now.strftime('%H:%M:%S')
+            f.writelines(f'\n{name},{dtstring}')
+
+
+
 encodelistknown = findencoding(images)
 print('Encoding Complete')
 
@@ -37,17 +53,18 @@ while True:
     for encodeface,faceloc in zip(encodecurframe,facescurframe):
         matches = face_recognition.compare_faces(encodelistknown,encodeface)
         facedis = face_recognition.face_distance(encodelistknown,encodeface)
-        print(facedis)
+        #print(facedis)
         matcheindex = np.argmin(facedis)
 
         if matches[matcheindex]:
             name = classNames[matcheindex].upper()
-            print(name)
+            #print(name)
             y1,x2,y2,x1 = faceloc
             y1,x2,y2,x1 = y1*4,x2*4,y2*4,x1*4
             cv2.rectangle(img,(x1,y1),(x2,y2),(0,255,0),2)
             cv2.rectangle(img,(x1,y2-35),(x2,y2),(0,255,0),cv2.FILLED)
             cv2.putText(img,name,(x1+6,y2-6),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,255),2)
+            markattendance(name)
 
 
     cv2.imshow('Webcam',img)
